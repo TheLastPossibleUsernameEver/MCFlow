@@ -8,6 +8,7 @@ import numpy as np
 
 '''Regresses a new latent vector which represents a more likely sample in the embedding'''
 
+
 class LatentToLatentApprox(nn.Module):
     """Feed foward neural network that regresses new embeddings in the latent space
     Args:

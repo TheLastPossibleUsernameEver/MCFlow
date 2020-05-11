@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from torch.nn.parameter import Parameter
 
+
 class InterpRealNVP(nn.Module):
     """Normalizing flow model that uses affine coupling layers from RealNVP and a random masking strategy
     Args:
@@ -19,14 +20,12 @@ class InterpRealNVP(nn.Module):
         self.scale_nn = torch.nn.ModuleList([scaling_nn() for _ in range(len(mask))])
         self.prior = prior
 
-
     def forward(self, x):
         # This implements the full transformation from the data space to latent space of the normalizing flow model
         log_det_jac, z = x.new_zeros(x.shape[0]), x
         for index in range(len(self.translate_nn)):
             z, log_det_jac = self.affine_coupling_transform(z, index, log_det_jac)
         return z, log_det_jac
-
 
     def inverse(self, z):
         # This implements the full transformation from the latent space to data space
@@ -49,7 +48,6 @@ class InterpRealNVP(nn.Module):
         translate = self.translate_nn[index](x_)*(1 - self.mask[index])
         x = x_ + (1 - self.mask[index]) * ((x - translate) * torch.exp(-scale))
         return x
-
 
     def log_prob(self,x, args):
         z, logp = self.forward(x)

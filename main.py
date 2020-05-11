@@ -13,16 +13,16 @@ from models import LatentToLatentApprox
 
 
 def main(args):
-    #initialize dataset class
+    # initialize dataset class
     ldr = DataLoader(mode=0, seed=args.seed, path=args.dataset, drp_percent=args.drp_impt)
     data_loader = torch.utils.data.DataLoader(ldr, batch_size=args.batch_size, shuffle=True, drop_last=False)
     num_neurons = int(ldr.train[0].shape[0])
 
-    #Initialize normalizing flow model neural network and its optimizer
+    # Initialize normalizing flow model neural network and its optimizer
     flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
     nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad==True], lr=args.lr)
 
-    #Initialize latent space neural network and its optimizer
+    # Initialize latent space neural network and its optimizer
     num_hidden_neurons = [int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]),  int(ldr.train[0].shape[0])]
     nn_model = LatentToLatentApprox(int(ldr.train[0].shape[0]), num_hidden_neurons).float()
     if args.use_cuda:
@@ -41,25 +41,27 @@ def main(args):
         print("Invalid dataset error")
         sys.exit()
 
-    #Train and test MCFlow
+    # Train and test MCFlow
     for epoch in range(args.n_epochs):
-        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, data_loader, args) #Train the MCFlow model
+        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, data_loader, args) # Train the MCFlow model
 
         with torch.no_grad():
-            ldr.mode=1 #Use testing data
-            te_mse, _ = util.endtoend_test(flow, nn_model, data_loader, args) #Test MCFlow model
-            ldr.mode=0 #Use training data
+            ldr.mode = 1  # Use testing data
+            te_mse, _ = util.endtoend_test(flow, nn_model, data_loader, args)  # Test MCFlow model
+            ldr.mode = 0  # Use training data
             print("Epoch", epoch, " Test RMSE", te_mse**.5)
 
         if (epoch+1) % reset_scheduler == 0:
-            #Reset unknown values in the dataset using predicted estimates
+            # Reset unknown values in the dataset using predicted estimates
             if args.dataset == 'mnist':
                 ldr.reset_img_imputed_values(nn_model, flow, args.seed, args)
             else:
                 ldr.reset_imputed_values(nn_model, flow, args.seed, args)
-            flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args) #Initialize brand new flow model to train on new dataset
+            # Initialize brand new flow model to train on new dataset
+            flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
             nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad==True], lr=args.lr)
             reset_scheduler = reset_scheduler*2
+
 
 ''' Run MCFlow experiment '''
 if __name__ == "__main__":

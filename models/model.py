@@ -49,7 +49,7 @@ class InterpRealNVP(nn.Module):
         x = x_ + (1 - self.mask[index]) * ((x - translate) * torch.exp(-scale))
         return x
 
-    def log_prob(self,x, args):
+    def log_prob(self, x, args):
         z, logp = self.forward(x)
 
         log_p = self.prior.log_prob(z.cpu())

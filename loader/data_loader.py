@@ -26,11 +26,11 @@ class DataLoader(nn.Module):
             self.matrix, self.maxs, self.mins = util.preprocess(matrix)  # Preprocess according to the paper cited above
         if path == 'mnist':
             self.mask_tr, self.mask_te = util.create_img_dropout_masks(drp_percent, path, img_shape, len(self.original_tr), len(self.original_te))
-            self.train, self.test = util.fill_img_missingness(self.original_tr, self.original_te, self.mask_tr, self.mask_te, img_shape, 0) #For now 0 represents nearest neighbor calc
+            self.train, self.test = util.fill_img_missingness(self.original_tr, self.original_te, self.mask_tr, self.mask_te, img_shape, 0)  # For now 0 represents nearest neighbor calc
         else:
             np.random.shuffle(self.matrix)
             np.random.seed(seed)
-            self.mask = util.make_static_mask(drp_percent, seed, path, self.matrix)  # check if the mask is there or not in this function
+            self.mask = util.make_static_mask(drp_percent, seed, path, self.matrix)  # Check if the mask is there or not in this function
             self.original_tr, self.original_te = util.create_k_fold(self.matrix, seed)
             self.unique_values = []
             self.mask_tr, self.mask_te = util.create_k_fold_mask(seed, self.mask)

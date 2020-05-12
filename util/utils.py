@@ -75,9 +75,9 @@ def endtoend_test(flow, nn_model, data_loader, args):
 
         batch_loss = torch.sum(loss(torch.clamp(x_hat, min=0, max=1), labels[0]) * labels[1])
         total_imputing += np.sum(labels[1].cpu().numpy())
-        totalloss+=batch_loss.item()
+        totalloss += batch_loss.item()
 
-    index+=1
+    index += 1
     return totalloss/total_imputing, nf_totalloss/index
 
 
@@ -146,7 +146,7 @@ def inference_imputation_networks(nn, nf, data, args):
             z_hat = nn(z)
             x_hat = nf.inverse(z_hat)
 
-            lst.append(np.clip(x_hat.cpu().numpy(),0,1))
+            lst.append(np.clip(x_hat.cpu().numpy(), 0, 1))
 
         rows = data[int((idx+1)*batch_sz):]
         if args.use_cuda:
@@ -177,8 +177,8 @@ def inference_img_imputation_networks(nn, nf, data, mask, original_dat, args):
 
     with torch.no_grad():
         for idx in range(iterations):
-            begin =int(idx*batch_sz)
-            end =int((idx+1)*batch_sz)
+            begin = int(idx*batch_sz)
+            end = int((idx+1)*batch_sz)
             rows = np.asarray(data[begin:end])
             if args.use_cuda:
                 rows = torch.from_numpy(rows).float().cuda()
@@ -332,7 +332,7 @@ def initialize_nneighbor_radnommat(dta, msk, shape):
 
 def str2bool(v):
     if isinstance(v, bool):
-       return v
+        return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
@@ -454,14 +454,14 @@ def fill_missingness(matrix, mask, unique_values, path, seed=0):
 
 def make_static_mask(drp_percent, seed, path, matrix):
     mask = np.zeros(matrix.shape)
-    if os.path.exists('./masks/' + path +'mask.npy'):
-        mask = np.load('./masks/' + path +'mask.npy')
+    if os.path.exists('./masks/' + path + 'mask.npy'):
+        mask = np.load('./masks/' + path + 'mask.npy')
     else:
         for r_idx, row in enumerate(mask):
             for c_idx, element in enumerate(row):
                 if np.random.uniform() < drp_percent:
                     mask[r_idx][c_idx] += 1
 
-        np.save('./masks/' + path +'mask.npy', mask)
+        np.save('./masks/' + path + 'mask.npy', mask)
 
     return mask

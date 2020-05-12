@@ -10,7 +10,7 @@ import numpy as np
 
 
 class LatentToLatentApprox(nn.Module):
-    """Feed foward neural network that regresses new embeddings in the latent space
+    """Feed forward neural network that regresses new embeddings in the latent space
     Args:
         input_dim (int): Dimensionality of the input.
         num_hidden_neurons (list): Number of neurons to use for each linear layer.

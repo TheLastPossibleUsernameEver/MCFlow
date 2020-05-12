@@ -25,12 +25,16 @@ class DataLoader(nn.Module):
             matrix = util.path_to_matrix(path)
             self.matrix, self.maxs, self.mins = util.preprocess(matrix)  # Preprocess according to the paper cited above
         if path == 'mnist':
-            self.mask_tr, self.mask_te = util.create_img_dropout_masks(drp_percent, path, img_shape, len(self.original_tr), len(self.original_te))
-            self.train, self.test = util.fill_img_missingness(self.original_tr, self.original_te, self.mask_tr, self.mask_te, img_shape, 0) #For now 0 represents nearest neighbor calc
+            self.mask_tr, self.mask_te = util.create_img_dropout_masks(drp_percent, path, img_shape,
+                                                                       len(self.original_tr), len(self.original_te))
+            self.train, self.test = util.fill_img_missingness(self.original_tr, self.original_te, self.mask_tr,
+                                                              self.mask_te, img_shape,
+                                                              0)  # For now 0 represents nearest neighbor calc
         else:
             np.random.shuffle(self.matrix)
             np.random.seed(seed)
-            self.mask = util.make_static_mask(drp_percent, seed, path, self.matrix)  # check if the mask is there or not in this function
+            self.mask = util.make_static_mask(drp_percent, seed, path,
+                                              self.matrix)  # check if the mask is there or not in this function
             self.original_tr, self.original_te = util.create_k_fold(self.matrix, seed)
             self.unique_values = []
             self.mask_tr, self.mask_te = util.create_k_fold_mask(seed, self.mask)
@@ -47,9 +51,9 @@ class DataLoader(nn.Module):
     def reset_imputed_values(self, nn_model, nf_model, seed, args):
 
         random_mat = np.clip(util.inference_imputation_networks(nn_model, nf_model, self.train, args), 0, 1)
-        self.train = (1-self.mask_tr) * self.original_tr + self.mask_tr * random_mat
+        self.train = (1 - self.mask_tr) * self.original_tr + self.mask_tr * random_mat
         random_mat = np.clip(util.inference_imputation_networks(nn_model, nf_model, self.test, args), 0, 1)
-        self.test = (1-self.mask_te) * self.original_te + self.mask_te * random_mat
+        self.test = (1 - self.mask_te) * self.original_te + self.mask_te * random_mat
 
     def reset_img_imputed_values(self, nn_model, nf_model, seed, args):
 

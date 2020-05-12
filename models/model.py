@@ -12,6 +12,7 @@ class InterpRealNVP(nn.Module):
         mask (list): List of masks to be used specific to each affine coupling transformation
         prior (torch.distributions.MultivariateNormal): The desired distribution for the transformation to the emedding space
     """
+
     def __init__(self, scaling_nn, translating_nn, mask, prior):
         super(InterpRealNVP, self).__init__()
 
@@ -36,20 +37,20 @@ class InterpRealNVP(nn.Module):
 
     def affine_coupling_transform(self, z, index, log_det_jac):
         z_ = self.mask[index] * z
-        scale = self.scale_nn[index](z_) * (1-self.mask[index])
-        translate = self.translate_nn[index](z_) * (1-self.mask[index])
-        z = (1 - self.mask[index]) * (z * torch.exp(scale) + translate)+ z_
+        scale = self.scale_nn[index](z_) * (1 - self.mask[index])
+        translate = self.translate_nn[index](z_) * (1 - self.mask[index])
+        z = (1 - self.mask[index]) * (z * torch.exp(scale) + translate) + z_
         log_det_jac += scale.sum(dim=1)
         return z, log_det_jac
 
     def inverse_affine_coupling_transform(self, x, index):
-        x_ = x*self.mask[index]
-        scale = self.scale_nn[index](x_)*(1 - self.mask[index])
-        translate = self.translate_nn[index](x_)*(1 - self.mask[index])
+        x_ = x * self.mask[index]
+        scale = self.scale_nn[index](x_) * (1 - self.mask[index])
+        translate = self.translate_nn[index](x_) * (1 - self.mask[index])
         x = x_ + (1 - self.mask[index]) * ((x - translate) * torch.exp(-scale))
         return x
 
-    def log_prob(self,x, args):
+    def log_prob(self, x, args):
         z, logp = self.forward(x)
 
         log_p = self.prior.log_prob(z.cpu())

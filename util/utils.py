@@ -11,13 +11,13 @@ import torchvision
 from torchvision import transforms, datasets
 from torch import distributions
 import ssl
+
 '''
 Helper functions for MCFlow
 '''
 
 
 def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
-
     nf_totalloss = 0
     totalloss = 0
     total_log_loss = 0
@@ -37,7 +37,7 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
         _, log_p = flow.log_prob(x_hat, args)
 
         batch_loss = torch.sum(loss_func(x_hat, labels[0]) * (1 - labels[1]))
-        total_imputing += np.sum(1-labels[1].cpu().numpy())
+        total_imputing += np.sum(1 - labels[1].cpu().numpy())
 
         log_lss = log_p
         total_log_loss += log_p.item()
@@ -51,7 +51,7 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
         nn_optimizer.zero_grad()
 
     index += 1
-    return totalloss, total_log_loss/index, nf_totalloss/index
+    return totalloss, total_log_loss / index, nf_totalloss / index
 
 
 def endtoend_test(flow, nn_model, data_loader, args):
@@ -75,14 +75,14 @@ def endtoend_test(flow, nn_model, data_loader, args):
 
         batch_loss = torch.sum(loss(torch.clamp(x_hat, min=0, max=1), labels[0]) * labels[1])
         total_imputing += np.sum(labels[1].cpu().numpy())
-        totalloss+=batch_loss.item()
+        totalloss += batch_loss.item()
 
-    index+=1
-    return totalloss/total_imputing, nf_totalloss/index
+    index += 1
+    return totalloss / total_imputing, nf_totalloss / index
 
 
 def create_mask(shape):
-    zeros = int(shape/2)
+    zeros = int(shape / 2)
     ones = shape - zeros
     lst = []
     for i in range(shape):
@@ -103,18 +103,21 @@ def create_mask(shape):
 
 
 def init_flow_model(num_neurons, num_layers, init_flow, data_shape, args):
+    nets = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
+                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                                 nn.Linear(num_neurons, num_neurons),
+                                 nn.LeakyReLU(), nn.Linear(num_neurons, data_shape), nn.Tanh())
 
-    nets = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(), nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(), nn.Linear(num_neurons, num_neurons),
-        nn.LeakyReLU(), nn.Linear(num_neurons, data_shape), nn.Tanh())
-
-    nett = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(), nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
-        nn.Linear(num_neurons, num_neurons),  nn.LeakyReLU(), nn.Linear(num_neurons, data_shape))
+    nett = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
+                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                                 nn.Linear(num_neurons, data_shape))
 
     mask = []
     for idx in range(num_layers):
         msk = create_mask(data_shape)
         mask.append(msk)
-        mask.append(1-msk)
+        mask.append(1 - msk)
 
     masks = torch.from_numpy(np.asarray(mask)).float()
     if args.use_cuda:
@@ -131,12 +134,12 @@ def inference_imputation_networks(nn, nf, data, args):
     lst = []
 
     batch_sz = 256
-    iterations = int(data.shape[0]/batch_sz)
+    iterations = int(data.shape[0] / batch_sz)
     left_over = data.shape[0] - batch_sz * iterations
 
     with torch.no_grad():
         for idx in range(iterations):
-            rows = data[int(idx*batch_sz):int((idx+1)*batch_sz)]
+            rows = data[int(idx * batch_sz):int((idx + 1) * batch_sz)]
             if args.use_cuda:
                 rows = torch.from_numpy(rows).float().cuda()
             else:
@@ -146,9 +149,9 @@ def inference_imputation_networks(nn, nf, data, args):
             z_hat = nn(z)
             x_hat = nf.inverse(z_hat)
 
-            lst.append(np.clip(x_hat.cpu().numpy(),0,1))
+            lst.append(np.clip(x_hat.cpu().numpy(), 0, 1))
 
-        rows = data[int((idx+1)*batch_sz):]
+        rows = data[int((idx + 1) * batch_sz):]
         if args.use_cuda:
             rows = torch.from_numpy(rows).float().cuda()
         else:
@@ -169,16 +172,15 @@ def inference_imputation_networks(nn, nf, data, args):
 
 
 def inference_img_imputation_networks(nn, nf, data, mask, original_dat, args):
-
     batch_sz = 256
-    iterations = int(len(data)/batch_sz)
+    iterations = int(len(data) / batch_sz)
     left_over = len(data) - batch_sz * iterations
     ones = np.ones((256, data[0].shape[0]))
 
     with torch.no_grad():
         for idx in range(iterations):
-            begin =int(idx*batch_sz)
-            end =int((idx+1)*batch_sz)
+            begin = int(idx * batch_sz)
+            end = int((idx + 1) * batch_sz)
             rows = np.asarray(data[begin:end])
             if args.use_cuda:
                 rows = torch.from_numpy(rows).float().cuda()
@@ -188,8 +190,8 @@ def inference_img_imputation_networks(nn, nf, data, mask, original_dat, args):
             z = nf(rows)[0]
             z_hat = nn(z)
             x_hat = nf.inverse(z_hat)
-            x_hat = np.clip(x_hat.cpu().numpy(),0,1)
-            data[begin:end] = (ones-mask[begin:end]) * original_dat[begin:end] +  mask[begin:end] * x_hat
+            x_hat = np.clip(x_hat.cpu().numpy(), 0, 1)
+            data[begin:end] = (ones - mask[begin:end]) * original_dat[begin:end] + mask[begin:end] * x_hat
 
         rows = np.asarray(data[-left_over:])
         if args.use_cuda:
@@ -201,29 +203,29 @@ def inference_img_imputation_networks(nn, nf, data, mask, original_dat, args):
         z = nf(rows)[0]
         z_hat = nn(z)
         x_hat = nf.inverse(z_hat)
-        x_hat = np.clip(x_hat.cpu().numpy(),0,1)
-        data[-left_over:] = (ones-mask[-left_over:]) * original_dat[-left_over:] +  mask[-left_over:] * x_hat
+        x_hat = np.clip(x_hat.cpu().numpy(), 0, 1)
+        data[-left_over:] = (ones - mask[-left_over:]) * original_dat[-left_over:] + mask[-left_over:] * x_hat
 
 
 def create_k_fold_mask(seed, mask):
     # I will create different folds based on the seed
-    fold_sz = int(mask.shape[0]*.2)  # 5 folds
+    fold_sz = int(mask.shape[0] * .2)  # 5 folds
 
     if seed == 0:
         mask_tr = mask[fold_sz:]
         mask_te = mask[:fold_sz]
     elif seed == 1:
-        mask_tr = np.concatenate((mask[:fold_sz], mask[int(fold_sz*2):]))
-        mask_te = mask[fold_sz:int(fold_sz*2)]
+        mask_tr = np.concatenate((mask[:fold_sz], mask[int(fold_sz * 2):]))
+        mask_te = mask[fold_sz:int(fold_sz * 2)]
     elif seed == 2:
-        mask_tr = np.concatenate((mask[:int(fold_sz*2)], mask[int(fold_sz*3):]))
-        mask_te = mask[int(fold_sz*2):int(fold_sz*3)]
+        mask_tr = np.concatenate((mask[:int(fold_sz * 2)], mask[int(fold_sz * 3):]))
+        mask_te = mask[int(fold_sz * 2):int(fold_sz * 3)]
     elif seed == 3:
-        mask_tr = np.concatenate((mask[:int(fold_sz*3)], mask[int(fold_sz*4):]))
-        mask_te = mask[int(fold_sz*3):int(fold_sz*4)]
+        mask_tr = np.concatenate((mask[:int(fold_sz * 3)], mask[int(fold_sz * 4):]))
+        mask_te = mask[int(fold_sz * 3):int(fold_sz * 4)]
     elif seed == 4:
-        mask_tr = mask[:int(fold_sz*4)]
-        mask_te = mask[int(4*fold_sz):]
+        mask_tr = mask[:int(fold_sz * 4)]
+        mask_te = mask[int(4 * fold_sz):]
     else:
         print("incorrect seed for the fold")
         sys.exit()
@@ -267,7 +269,6 @@ def create_img_dropout_masks(drp_percent, path, img_shp, num_tr, num_te):
 
 
 def initialize_nneighbor_radnommat(dta, msk, shape):
-
     data = dta.copy()
     for idx, el in enumerate(data):
         # reshape the data
@@ -286,31 +287,33 @@ def initialize_nneighbor_radnommat(dta, msk, shape):
             neighbors = []
             while len(neighbors) == 0:
                 corners = [(point[0] + layer, point[1] + layer),
-                    (point[0] - layer, point[1] + layer),
-                    (point[0] + layer, point[1] - layer),
-                    (point[0] - layer, point[1] - layer)]
+                           (point[0] - layer, point[1] + layer),
+                           (point[0] + layer, point[1] - layer),
+                           (point[0] - layer, point[1] - layer)]
 
                 # row check -- need to check if the mask is zero there or that the data exists
                 for _row in range(corners[1][0], corners[0][0]):
-                    if _row >= 0 and _row < mask.shape[0] and corners[0][1] >=0 and corners[0][1] < mask.shape[0]:
+                    if _row >= 0 and _row < mask.shape[0] and corners[0][1] >= 0 and corners[0][1] < mask.shape[0]:
                         if mask[_row][corners[0][1]] == 0:
                             neighbors.append((_row, corners[0][1]))
 
                 # column check
                 for _column in range(corners[2][1], corners[0][1]):
-                    if _column >= 0 and _column < mask.shape[1] and corners[0][0] >=0 and corners[0][0] < mask.shape[0]:
+                    if _column >= 0 and _column < mask.shape[1] and corners[0][0] >= 0 and corners[0][0] < mask.shape[
+                        0]:
                         if mask[corners[0][0]][_column] == 0:
                             neighbors.append((corners[0][0], _column))
 
                 # row check
                 for _row in range(corners[3][0], corners[2][0]):
-                    if _row >= 0 and _row < mask.shape[0] and corners[2][1] >=0 and corners[2][1] < mask.shape[0]:
+                    if _row >= 0 and _row < mask.shape[0] and corners[2][1] >= 0 and corners[2][1] < mask.shape[0]:
                         if mask[_row][corners[2][1]] == 0:
                             neighbors.append((_row, corners[2][1]))
 
                 # column check
                 for _column in range(corners[3][1], corners[1][1]):
-                    if _column >= 0 and _column < mask.shape[1] and corners[1][0] >=0 and corners[1][0] < mask.shape[0]:
+                    if _column >= 0 and _column < mask.shape[1] and corners[1][0] >= 0 and corners[1][0] < mask.shape[
+                        0]:
                         if mask[corners[1][0]][_column] == 0:
                             neighbors.append((corners[1][0], _column))
 
@@ -332,7 +335,7 @@ def initialize_nneighbor_radnommat(dta, msk, shape):
 
 def str2bool(v):
     if isinstance(v, bool):
-       return v
+        return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
@@ -357,23 +360,23 @@ def fill_img_missingness(tr_data, te_data, mask_tr, mask_te, shape, type):
 
 def create_k_fold(matrix, seed):
     # I will create different folds based on the seed
-    fold_sz = int(matrix.shape[0]*.2)  # 5 folds
+    fold_sz = int(matrix.shape[0] * .2)  # 5 folds
 
     if seed == 0:
         train = matrix[fold_sz:]
         test = matrix[:fold_sz]
     elif seed == 1:
-        train = np.concatenate((matrix[:fold_sz], matrix[int(fold_sz*2):]))
-        test = matrix[fold_sz:int(fold_sz*2)]
+        train = np.concatenate((matrix[:fold_sz], matrix[int(fold_sz * 2):]))
+        test = matrix[fold_sz:int(fold_sz * 2)]
     elif seed == 2:
-        train = np.concatenate((matrix[:int(fold_sz*2)], matrix[int(fold_sz*3):]))
-        test = matrix[int(fold_sz*2):int(fold_sz*3)]
+        train = np.concatenate((matrix[:int(fold_sz * 2)], matrix[int(fold_sz * 3):]))
+        test = matrix[int(fold_sz * 2):int(fold_sz * 3)]
     elif seed == 3:
-        train = np.concatenate((matrix[:int(fold_sz*3)], matrix[int(fold_sz*4):]))
-        test = matrix[int(fold_sz*3):int(fold_sz*4)]
+        train = np.concatenate((matrix[:int(fold_sz * 3)], matrix[int(fold_sz * 4):]))
+        test = matrix[int(fold_sz * 3):int(fold_sz * 4)]
     elif seed == 4:
-        train = matrix[:int(fold_sz*4)]
-        test = matrix[int(4*fold_sz):]
+        train = matrix[:int(fold_sz * 4)]
+        test = matrix[int(4 * fold_sz):]
     else:
         print("incorrect seed for the fold")
         sys.exit()
@@ -396,10 +399,11 @@ def path_to_matrix(path):
             if os.path.exists('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv'):
                 print("\nSuccessfully downloaded OnlineNewsPopularity dataset from the UCI database")
                 df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-                matrix = df.values[:,1:]
+                matrix = df.values[:, 1:]
             else:
                 print("\n\nError downloading UCI database please extract OnlineNewsPopularity.zip in the data folder")
-                print("Donwload OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip")
+                print(
+                    "Donwload OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip")
                 sys.exit()
         return matrix
     elif path == 'mnist':
@@ -448,20 +452,20 @@ def make_random_matrix(matrix, unique_values, path):
 
 def fill_missingness(matrix, mask, unique_values, path, seed=0):
     random_mat = make_random_matrix(matrix, unique_values, path)
-    matrix = np.nan_to_num((1-mask) * matrix) + mask * random_mat
+    matrix = np.nan_to_num((1 - mask) * matrix) + mask * random_mat
     return create_k_fold(matrix, seed)
 
 
 def make_static_mask(drp_percent, seed, path, matrix):
     mask = np.zeros(matrix.shape)
-    if os.path.exists('./masks/' + path +'mask.npy'):
-        mask = np.load('./masks/' + path +'mask.npy')
+    if os.path.exists('./masks/' + path + 'mask.npy'):
+        mask = np.load('./masks/' + path + 'mask.npy')
     else:
         for r_idx, row in enumerate(mask):
             for c_idx, element in enumerate(row):
                 if np.random.uniform() < drp_percent:
                     mask[r_idx][c_idx] += 1
 
-        np.save('./masks/' + path +'mask.npy', mask)
+        np.save('./masks/' + path + 'mask.npy', mask)
 
     return mask

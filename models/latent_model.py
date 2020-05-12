@@ -10,7 +10,7 @@ import numpy as np
 
 
 class LatentToLatentApprox(nn.Module):
-    """Feed foward neural network that regresses new embeddings in the latent space
+    """Feed forward neural network that regresses new embeddings in the latent space
     Args:
         input_dim (int): Dimensionality of the input.
         num_hidden_neurons (list): Number of neurons to use for each linear layer.
@@ -27,7 +27,6 @@ class LatentToLatentApprox(nn.Module):
         self.act = nn.LeakyReLU()
 
     def forward(self, z):
-
         z = self.act(self.h_0(z))
         z = self.act(self.h_1(z))
         z = self.act(self.h_2(z))

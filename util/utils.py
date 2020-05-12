@@ -268,7 +268,7 @@ def create_img_dropout_masks(drp_percent, path, img_shp, num_tr, num_te):
     return train_mask, test_mask
 
 
-def initialize_nneighbor_radnommat(dta, msk, shape):
+def initialize_neighbor_radnommat(dta, msk, shape):
     data = dta.copy()
     for idx, el in enumerate(data):
         # reshape the data
@@ -293,27 +293,25 @@ def initialize_nneighbor_radnommat(dta, msk, shape):
 
                 # row check -- need to check if the mask is zero there or that the data exists
                 for _row in range(corners[1][0], corners[0][0]):
-                    if _row >= 0 and _row < mask.shape[0] and corners[0][1] >= 0 and corners[0][1] < mask.shape[0]:
+                    if 0 <= _row < mask.shape[0] and 0 <= corners[0][1] < mask.shape[0]:
                         if mask[_row][corners[0][1]] == 0:
                             neighbors.append((_row, corners[0][1]))
 
                 # column check
                 for _column in range(corners[2][1], corners[0][1]):
-                    if _column >= 0 and _column < mask.shape[1] and corners[0][0] >= 0 and corners[0][0] < mask.shape[
-                        0]:
+                    if 0 <= _column < mask.shape[1] and 0 <= corners[0][0] < mask.shape[0]:
                         if mask[corners[0][0]][_column] == 0:
                             neighbors.append((corners[0][0], _column))
 
                 # row check
                 for _row in range(corners[3][0], corners[2][0]):
-                    if _row >= 0 and _row < mask.shape[0] and corners[2][1] >= 0 and corners[2][1] < mask.shape[0]:
+                    if 0 <= _row < mask.shape[0] and 0 <= corners[2][1] < mask.shape[0]:
                         if mask[_row][corners[2][1]] == 0:
                             neighbors.append((_row, corners[2][1]))
 
                 # column check
                 for _column in range(corners[3][1], corners[1][1]):
-                    if _column >= 0 and _column < mask.shape[1] and corners[1][0] >= 0 and corners[1][0] < mask.shape[
-                        0]:
+                    if 0 <= _column < mask.shape[1] and 0 <= corners[1][0] < mask.shape[0]:
                         if mask[corners[1][0]][_column] == 0:
                             neighbors.append((corners[1][0], _column))
 
@@ -406,17 +404,6 @@ def path_to_matrix(path):
                     "Donwload OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip")
                 sys.exit()
         return matrix
-    elif path == 'mnist':
-        mnist_trainset = datasets.MNIST(root='./data', train=True, download=True)
-        mnist_testset = datasets.MNIST(root='./data', train=False, download=True)
-        mnist_train = []
-        mnist_test = []
-        for idx in range(len(mnist_trainset)):
-            mnist_train.append(np.array(mnist_trainset[idx][0]).flatten() / 255)
-
-        for idx in range(len(mnist_testset)):
-            mnist_test.append(np.array(mnist_testset[idx][0]).flatten() / 255)
-        return mnist_train, mnist_test, (1, 28, 28)
     else:
         print("Not a valid dataset\n\n")
         print("Valid datasets include: \nnews")

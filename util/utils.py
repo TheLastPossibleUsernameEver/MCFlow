@@ -1,14 +1,12 @@
+import argparse
 import os
 import sys
-import csv
 import wget
 import zipfile
 import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-import torchvision
-from torchvision import transforms, datasets
 from torch import distributions
 import ssl
 
@@ -103,15 +101,17 @@ def create_mask(shape):
 
 
 def init_flow_model(num_neurons, num_layers, init_flow, data_shape, args):
-    nets = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
-                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
-                                 nn.Linear(num_neurons, num_neurons),
-                                 nn.LeakyReLU(), nn.Linear(num_neurons, data_shape), nn.Tanh())
+    def nets():
+        return nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, data_shape), nn.Tanh())
 
-    nett = lambda: nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
-                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
-                                 nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
-                                 nn.Linear(num_neurons, data_shape))
+    def nett():
+        return nn.Sequential(nn.Linear(data_shape, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, num_neurons), nn.LeakyReLU(),
+                             nn.Linear(num_neurons, data_shape))
 
     mask = []
     for idx in range(num_layers):
@@ -135,7 +135,6 @@ def inference_imputation_networks(nn, nf, data, args):
 
     batch_sz = 256
     iterations = int(data.shape[0] / batch_sz)
-    left_over = data.shape[0] - batch_sz * iterations
 
     with torch.no_grad():
         for idx in range(iterations):
@@ -169,42 +168,6 @@ def inference_imputation_networks(nn, nf, data, args):
             final_lst.append(element)
 
     return final_lst
-
-
-def inference_img_imputation_networks(nn, nf, data, mask, original_dat, args):
-    batch_sz = 256
-    iterations = int(len(data) / batch_sz)
-    left_over = len(data) - batch_sz * iterations
-    ones = np.ones((256, data[0].shape[0]))
-
-    with torch.no_grad():
-        for idx in range(iterations):
-            begin = int(idx * batch_sz)
-            end = int((idx + 1) * batch_sz)
-            rows = np.asarray(data[begin:end])
-            if args.use_cuda:
-                rows = torch.from_numpy(rows).float().cuda()
-            else:
-                rows = torch.from_numpy(rows).float()
-
-            z = nf(rows)[0]
-            z_hat = nn(z)
-            x_hat = nf.inverse(z_hat)
-            x_hat = np.clip(x_hat.cpu().numpy(), 0, 1)
-            data[begin:end] = (ones - mask[begin:end]) * original_dat[begin:end] + mask[begin:end] * x_hat
-
-        rows = np.asarray(data[-left_over:])
-        if args.use_cuda:
-            rows = torch.from_numpy(rows).float().cuda()
-        else:
-            rows = torch.from_numpy(rows).float()
-        ones = np.ones((left_over, data[0].shape[0]))
-
-        z = nf(rows)[0]
-        z_hat = nn(z)
-        x_hat = nf.inverse(z_hat)
-        x_hat = np.clip(x_hat.cpu().numpy(), 0, 1)
-        data[-left_over:] = (ones - mask[-left_over:]) * original_dat[-left_over:] + mask[-left_over:] * x_hat
 
 
 def create_k_fold_mask(seed, mask):
@@ -268,7 +231,7 @@ def create_img_dropout_masks(drp_percent, path, img_shp, num_tr, num_te):
     return train_mask, test_mask
 
 
-def initialize_neighbor_radnommat(dta, msk, shape):
+def initialize_nneighbor_radnommat(dta, msk, shape):
     data = dta.copy()
     for idx, el in enumerate(data):
         # reshape the data

@@ -55,11 +55,6 @@ class DataLoader(nn.Module):
         random_mat = np.clip(util.inference_imputation_networks(nn_model, nf_model, self.test, args), 0, 1)
         self.test = (1 - self.mask_te) * self.original_te + self.mask_te * random_mat
 
-    def reset_img_imputed_values(self, nn_model, nf_model, seed, args):
-
-        util.inference_img_imputation_networks(nn_model, nf_model, self.train, self.mask_tr, self.original_tr, args)
-        util.inference_img_imputation_networks(nn_model, nf_model, self.test, self.mask_te, self.original_te, args)
-
     def __len__(self):
         if self.mode == 0:
             return len(self.train)

@@ -1,24 +1,25 @@
-import numpy as np
 import torch
 from torch import nn
-from torch.nn.parameter import Parameter
 
 
 class InterpRealNVP(nn.Module):
     """Normalizing flow model that uses affine coupling layers from RealNVP and a random masking strategy
     Args:
-        scaling_nn (torch.nn.Sequential): Neural network architecture for all scaling calculations in affine coupling layer
-        translating_nn (torch.nn.Sequential): Neural network architecture for all translating calculations in afficne coupling layer
+        scaling_nn (torch.nn.Sequential): Neural network architecture for all scaling calculations in affine
+        coupling layer
+        translating_nn (torch.nn.Sequential): Neural network architecture for all translating calculations in affine
+        coupling layer
         mask (list): List of masks to be used specific to each affine coupling transformation
-        prior (torch.distributions.MultivariateNormal): The desired distribution for the transformation to the emedding space
+        prior (torch.distributions.MultivariateNormal): The desired distribution for the transformation to the
+        embedding space
     """
 
     def __init__(self, scaling_nn, translating_nn, mask, prior):
         super(InterpRealNVP, self).__init__()
 
         self.mask = nn.Parameter(mask, requires_grad=False)
-        self.translate_nn = torch.nn.ModuleList([translating_nn() for _ in range(len(mask))])
-        self.scale_nn = torch.nn.ModuleList([scaling_nn() for _ in range(len(mask))])
+        self.translate_nn = nn.ModuleList([translating_nn() for _ in range(len(mask))])
+        self.scale_nn = nn.ModuleList([scaling_nn() for _ in range(len(mask))])
         self.prior = prior
 
     def forward(self, x):

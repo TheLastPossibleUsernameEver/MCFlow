@@ -12,7 +12,7 @@ from loader import DataLoader
 from models import LatentToLatentApprox
 
 
-def main(args):
+def main():
     # initialize dataset class
     ldr = DataLoader(mode=0, seed=args.seed, path=args.dataset, drp_percent=args.drp_impt)
     data_loader = torch.utils.data.DataLoader(ldr, batch_size=args.batch_size, shuffle=True, drop_last=False)
@@ -20,7 +20,7 @@ def main(args):
 
     # Initialize normalizing flow model neural network and its optimizer
     flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
-    nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad == True], lr=args.lr)
+    nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad], lr=args.lr)
 
     # Initialize latent space neural network and its optimizer
     num_hidden_neurons = [int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]),
@@ -28,16 +28,13 @@ def main(args):
     nn_model = LatentToLatentApprox(int(ldr.train[0].shape[0]), num_hidden_neurons).float()
     if args.use_cuda:
         nn_model.cuda()
-    nn_optimizer = torch.optim.Adam([p for p in nn_model.parameters() if p.requires_grad == True], lr=args.lr)
+    nn_optimizer = torch.optim.Adam([p for p in nn_model.parameters() if p.requires_grad], lr=args.lr)
 
     reset_scheduler = 2
 
     if args.dataset == 'news':
         print("\n****************************************")
         print("Starting OnlineNewsPopularity experiment\n")
-    elif args.dataset == 'mnist':
-        print("\n*********************************")
-        print("Starting MNIST dropout experiment\n")
     else:
         print("Invalid dataset error")
         sys.exit()
@@ -54,13 +51,10 @@ def main(args):
 
         if (epoch + 1) % reset_scheduler == 0:
             # Reset unknown values in the dataset using predicted estimates
-            if args.dataset == 'mnist':
-                ldr.reset_img_imputed_values(nn_model, flow, args.seed, args)
-            else:
-                ldr.reset_imputed_values(nn_model, flow, args.seed, args)
+            ldr.reset_imputed_values(nn_model, flow, args.seed, args)
             # Initialize brand new flow model to train on new dataset
             flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
-            nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad == True], lr=args.lr)
+            nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad], lr=args.lr)
             reset_scheduler = reset_scheduler * 2
 
 
@@ -70,11 +64,11 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=0, help='Reproducibility')
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--num-nf-layers', type=int, default=3)
-    parser.add_argument('--n-epochs', type=int, default=500)
+    parser.add_argument('--n-epochs', type=int, default=50)
     parser.add_argument('--drp-impt', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--use-cuda', type=util.str2bool, default=False)
-    parser.add_argument('--dataset', default='news', help='Two options: (1) letter-recogntion or (2) mnist')
+    parser.add_argument('--dataset', default='news', help='Two options: (1) letter-recognition or (2) mnist')
     args = parser.parse_args()
 
     ''' Reproducibility '''
@@ -83,7 +77,7 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(args.seed)
 
     ''' Cuda enabled experimentation check '''
-    if not torch.cuda.is_available() or args.use_cuda == False:
+    if not torch.cuda.is_available() or not args.use_cuda:
         print("CUDA Unavailable. Using cpu. Check torch.cuda.is_available()")
         args.use_cuda = False
 
@@ -93,5 +87,5 @@ if __name__ == "__main__":
     if not os.path.exists('data'):
         os.makedirs('data')
 
-    main(args)
+    main()
     print("Experiment completed")

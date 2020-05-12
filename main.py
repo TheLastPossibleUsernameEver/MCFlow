@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument('--n-epochs', type=int, default=500)
     parser.add_argument('--drp-impt', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--use-cuda', type=util.str2bool, default=True)
+    parser.add_argument('--use-cuda', type=util.str2bool, default=False)
     parser.add_argument('--dataset', default='news', help='Two options: (1) letter-recogntion or (2) mnist')
     args = parser.parse_args()
 

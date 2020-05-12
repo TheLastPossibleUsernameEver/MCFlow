@@ -57,19 +57,19 @@ class DataLoader(nn.Module):
         util.inference_img_imputation_networks(nn_model, nf_model, self.test, self.mask_te, self.original_te, args)
 
     def __len__(self):
-        if self.mode==0:
+        if self.mode == 0:
             return len(self.train)
-        elif self.mode==1:
+        elif self.mode == 1:
             return len(self.test)
         else:
             print("Data loader mode error -- acceptable modes are 0,1,2")
             sys.exit()
 
     def __getitem__(self, idx):
-        if self.mode==0:
-            return torch.Tensor(self.train[idx]) , (torch.Tensor(self.original_tr[idx]), torch.Tensor(self.mask_tr[idx]))
-        elif self.mode==1:
-            return torch.Tensor(self.test[idx]) , (torch.Tensor(self.original_te[idx]), torch.Tensor(self.mask_te[idx]))
+        if self.mode == 0:
+            return torch.Tensor(self.train[idx]), (torch.Tensor(self.original_tr[idx]), torch.Tensor(self.mask_tr[idx]))
+        elif self.mode == 1:
+            return torch.Tensor(self.test[idx]), (torch.Tensor(self.original_te[idx]), torch.Tensor(self.mask_te[idx]))
         else:
             print("Data loader mode error -- acceptable modes are 0,1,2")
             sys.exit()

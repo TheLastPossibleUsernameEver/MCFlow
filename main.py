@@ -43,7 +43,7 @@ def main(args):
 
     # Train and test MCFlow
     for epoch in range(args.n_epochs):
-        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, data_loader, args) # Train the MCFlow model
+        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, data_loader, args)  # Train the MCFlow model
 
         with torch.no_grad():
             ldr.mode = 1  # Use testing data

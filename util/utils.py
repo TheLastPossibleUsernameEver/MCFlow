@@ -1,14 +1,11 @@
 import argparse
 import os
 import sys
-import wget
-import zipfile
 import numpy as np
 import pandas as pd
 import torch
 from torch import nn
 from torch import distributions
-import ssl
 
 '''
 Helper functions for MCFlow
@@ -41,8 +38,8 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
         batch_loss = torch.sum(loss_func(x_hat, labels[0]) * (1 - labels[1]))
         total_imputing += np.sum(1 - labels[1].cpu().numpy())
 
-        print("Index is %d, batchloss is %d, total_imputing is %d\n, totalloss is %d, nf_totalloss is %d",
-              index, batch_loss, total_imputing, totalloss, nf_totalloss)
+        print("Index is: " + str(index) + "\nBatch_loss is " + str(batch_loss) + "\nTotal_imputing is " +
+              str(total_imputing) + "\nTotalloss is: " + str(totalloss) + "\nNf_totalloss: " + str(nf_totalloss))
 
         log_lss = log_p
         total_log_loss += log_p.item()

@@ -16,6 +16,8 @@ Helper functions for MCFlow
 
 
 def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
+
+    print("starting end-to-end train")
     nf_totalloss = 0
     totalloss = 0
     total_log_loss = 0
@@ -34,8 +36,13 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
         x_hat = flow.inverse(z_hat)
         _, log_p = flow.log_prob(x_hat, args)
 
+        print("1-st training checkpoint")
+
         batch_loss = torch.sum(loss_func(x_hat, labels[0]) * (1 - labels[1]))
         total_imputing += np.sum(1 - labels[1].cpu().numpy())
+
+        print("Index is %d, batchloss is %d, total_imputing is %d\n, totalloss is %d, nf_totalloss is %d",
+              index, batch_loss, total_imputing, totalloss, nf_totalloss)
 
         log_lss = log_p
         total_log_loss += log_p.item()
@@ -346,27 +353,29 @@ def create_k_fold(matrix, seed):
 
 
 def path_to_matrix(path):
-    if path == 'news':
-        try:
-            df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-            matrix = df.values[:, 1:]
-        except:
-            print("\nDownloading OnlineNewsPopularity dataset\n")
-            ssl._create_default_https_context = ssl._create_unverified_context
-            wget.download('https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip')
-            with zipfile.ZipFile('OnlineNewsPopularity.zip', 'r') as zip_ref:
-                zip_ref.extractall('./data/')
-            os.remove("OnlineNewsPopularity.zip")
-            if os.path.exists('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv'):
-                print("\nSuccessfully downloaded OnlineNewsPopularity dataset from the UCI database")
-                df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-                matrix = df.values[:, 1:]
-            else:
-                print("\n\nError downloading UCI database please extract OnlineNewsPopularity.zip in the data folder")
-                print(
-                    "Donwload OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip")
-                sys.exit()
+    if path == 'physionet':
+    # try:
+        df = pd.read_csv('./data/Approx-Comp/s20011.csv')
+        matrix = df.values[:, 1:]
         return matrix
+        # except:
+        #     print("\nDownloading OnlineNewsPopularity dataset\n")
+        #     ssl._create_default_https_context = ssl._create_unverified_context
+        #     wget.download('https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip')
+        #     with zipfile.ZipFile('OnlineNewsPopularity.zip', 'r') as zip_ref:
+        #         zip_ref.extractall('./data/')
+        #     os.remove("OnlineNewsPopularity.zip")
+        #     if os.path.exists('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv'):
+        #         print("\nSuccessfully downloaded OnlineNewsPopularity dataset from the UCI database")
+        #         df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
+        #         matrix = df.values[:, 1:]
+        #     else:
+        #         print("\n\nError downloading UCI database please extract OnlineNewsPopularity.zip in the data folder")
+        #         print(
+        #   "Download OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/
+        #   machine-learning-databases/00332/OnlineNewsPopularity.zip")
+        #         sys.exit()
+
     else:
         print("Not a valid dataset\n\n")
         print("Valid datasets include: \nnews")

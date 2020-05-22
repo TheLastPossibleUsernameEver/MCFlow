@@ -49,7 +49,13 @@ class DataLoader(nn.Module):
         self.train, self.test = util.fill_missingness(self.matrix, self.mask, self.unique_values, self.path, seed)
         self.mode = mode
 
-    def reset_imputed_values(self, nn_model, nf_model, seed, args):
+    @classmethod
+    def test_data_loader(cls, path='physionet', mode=3):
+        cls.path = path
+
+        cls.matrix = util.path_to_matrix(path)
+
+    def reset_imputed_values(self, nn_model, nf_model, args):
 
         random_mat = np.clip(util.inference_imputation_networks(nn_model, nf_model, self.train, args), 0, 1)
         self.train = (1 - self.mask_tr) * self.original_tr + self.mask_tr * random_mat

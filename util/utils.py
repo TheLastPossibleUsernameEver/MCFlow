@@ -22,10 +22,6 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
     loss_func = nn.MSELoss(reduction='none')
 
     for index, (vectors, labels) in enumerate(loader):
-        if args.use_cuda:
-            vectors = vectors.cuda()
-            labels[0] = labels[0].cuda()
-            labels[1] = labels[1].cuda()
 
         z, nf_loss = flow.log_prob(vectors, args)
         nf_totalloss += nf_loss.item()
@@ -63,10 +59,6 @@ def endtoend_test(flow, nn_model, data_loader, args):
     loss = nn.MSELoss(reduction='none')
 
     for index, (vectors, labels) in enumerate(data_loader):
-        if args.use_cuda:
-            vectors = vectors.cuda()
-            labels[0] = labels[0].cuda()
-            labels[1] = labels[1].cuda()
 
         z, nf_loss = flow.log_prob(vectors, args)
         nf_totalloss += nf_loss.item()
@@ -200,41 +192,6 @@ def create_k_fold_mask(seed, mask):
     return mask_tr, mask_te
 
 
-def create_img_dropout_masks(drp_percent, path, img_shp, num_tr, num_te):
-    train_mask = []
-    test_mask = []
-
-    num_channels = img_shp[0]
-
-    for idx in range(num_tr):
-        sample = []
-        for r_idx in range(img_shp[1]):
-            for c_idx in range(img_shp[2]):
-                if np.random.uniform() < drp_percent:
-                    sample.append(1)
-                else:
-                    sample.append(0)
-        if num_channels == 1:
-            train_mask.append(np.asarray(sample))
-        else:
-            train_mask.append(np.asarray(sample + sample + sample))
-
-    for idx in range(num_te):
-        sample = []
-        for r_idx in range(img_shp[1]):
-            for c_idx in range(img_shp[2]):
-                if np.random.uniform() < drp_percent:
-                    sample.append(1)
-                else:
-                    sample.append(0)
-        if num_channels == 1:
-            test_mask.append(np.asarray(sample))
-        else:
-            test_mask.append(np.asarray(sample + sample + sample))
-
-    return train_mask, test_mask
-
-
 def initialize_nneighbor_radnommat(dta, msk, shape):
     data = dta.copy()
     for idx, el in enumerate(data):
@@ -309,20 +266,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def fill_img_missingness(tr_data, te_data, mask_tr, mask_te, shape, type):
-    if type == 0:
-        train = initialize_nneighbor_radnommat(tr_data, mask_tr, shape)
-        test = initialize_nneighbor_radnommat(te_data, mask_te, shape)
-    else:
-        # pixelwise imputation
-        print("not yet implemented")
-        sys.exit()
-        train = initialize_pixelwise_radnommat(tr_data, mask_tr, shape)  # still needs to be implemented
-        test = initialize_pixelwise_radnommat(te_data, mask_te, shape)  # still needs to be implemented
-
-    return train, test
-
-
 def create_k_fold(matrix, seed):
     # I will create different folds based on the seed
     fold_sz = int(matrix.shape[0] * .2)  # 5 folds
@@ -351,32 +294,12 @@ def create_k_fold(matrix, seed):
 
 def path_to_matrix(path):
     if path == 'physionet':
-    # try:
         df = pd.read_csv('./data/Approx-Comp/s20011.csv')
         matrix = df.values[:, 1:]
         return matrix
-        # except:
-        #     print("\nDownloading OnlineNewsPopularity dataset\n")
-        #     ssl._create_default_https_context = ssl._create_unverified_context
-        #     wget.download('https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip')
-        #     with zipfile.ZipFile('OnlineNewsPopularity.zip', 'r') as zip_ref:
-        #         zip_ref.extractall('./data/')
-        #     os.remove("OnlineNewsPopularity.zip")
-        #     if os.path.exists('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv'):
-        #         print("\nSuccessfully downloaded OnlineNewsPopularity dataset from the UCI database")
-        #         df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-        #         matrix = df.values[:, 1:]
-        #     else:
-        #         print("\n\nError downloading UCI database please extract OnlineNewsPopularity.zip in the data folder")
-        #         print(
-        #   "Download OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/
-        #   machine-learning-databases/00332/OnlineNewsPopularity.zip")
-        #         sys.exit()
-
     else:
         print("Not a valid dataset\n\n")
-        print("Valid datasets include: \nnews")
-        print("mnist")
+        print("Valid datasets include: \nphysionet")
         sys.exit()
 
 

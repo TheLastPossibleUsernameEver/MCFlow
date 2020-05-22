@@ -1,5 +1,5 @@
 """
-Official implementation of MCFlow -
+Official implementation of MCFlow
 """
 import numpy as np
 import torch
@@ -14,28 +14,33 @@ from models import LatentToLatentApprox
 
 def main():
     # initialize dataset class
-    ldr = DataLoader(mode=0, seed=args.seed, path=args.dataset, drp_percent=args.drp_impt)
+    ldr_train = DataLoader(mode=0, seed=args.seed, path=args.dataset, drp_percent=args.drp_impt)
     print("Initialized Data Loader")
 
-    data_loader = torch.utils.data.DataLoader(ldr, batch_size=args.batch_size, shuffle=True, drop_last=False)
-    print("Initialized Torch Data Loader")
+    train_data_loader = torch.utils.data.DataLoader(ldr_train, batch_size=args.batch_size, shuffle=True, drop_last=False)
+    print("Initialized Torch train data Loader")
 
-    num_neurons = int(ldr.train[0].shape[0])
+    ldr_test = DataLoader.test_data_loader()
+    test_data_loader = torch.utils.data.DataLoader(ldr_test, batch_size=args.batch_size, shuffle=False, drop_last=False)
+    print("Initialized Torch test data Loader")
+
+    num_neurons = int(ldr_train.train[0].shape[0])
     print("Initialized num_neurons")
 
     # Initialize normalizing flow model neural network and its optimizer
-    flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
+    flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr_train.train[0].shape[0], args)
     print("Initialized normalizing flow model")
     nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad], lr=args.lr)
     print("Initialized normalizing flow model neural network optimizer")
 
     # Initialize latent space neural network and its optimizer
     print("Initialize latent space neural network")
-    num_hidden_neurons = [int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0]),
-                          int(ldr.train[0].shape[0]), int(ldr.train[0].shape[0])]
+    num_hidden_neurons = [int(ldr_train.train[0].shape[0]), int(ldr_train.train[0].shape[0]),
+                          int(ldr_train.train[0].shape[0]),
+                          int(ldr_train.train[0].shape[0]), int(ldr_train.train[0].shape[0])]
 
     print("Initialize neural network optimizer")
-    nn_model = LatentToLatentApprox(int(ldr.train[0].shape[0]), num_hidden_neurons).float()
+    nn_model = LatentToLatentApprox(int(ldr_train.train[0].shape[0]), num_hidden_neurons).float()
 
     if args.use_cuda:
         nn_model.cuda()
@@ -52,19 +57,21 @@ def main():
 
     # Train and test MCFlow
     for epoch in range(args.n_epochs):
-        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, data_loader, args)  # Train the MCFlow model
+        # Train the MCFlow model
+        util.endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, train_data_loader, args)
 
         with torch.no_grad():
-            ldr.mode = 1  # Use testing data
-            te_mse, _ = util.endtoend_test(flow, nn_model, data_loader, args)  # Test MCFlow model
-            ldr.mode = 0  # Use training data
+            ldr_train.mode = 1  # Use testing data
+            te_mse, _ = util.endtoend_test(flow, nn_model, test_data_loader, args)  # Test MCFlow model
+            ldr_train.mode = 0  # Use training data
             print("Epoch", epoch, " Test RMSE", te_mse ** .5)
 
         if (epoch + 1) % reset_scheduler == 0:
             # Reset unknown values in the dataset using predicted estimates
-            ldr.reset_imputed_values(nn_model, flow, args.seed, args)
+            ldr_train.reset_imputed_values(nn_model, flow, args.seed, args)
             # Initialize brand new flow model to train on new dataset
-            flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr.train[0].shape[0], args)
+            flow = util.init_flow_model(num_neurons, args.num_nf_layers, InterpRealNVP, ldr_train.train[0].shape[0],
+                                        args)
             nf_optimizer = torch.optim.Adam([p for p in flow.parameters() if p.requires_grad], lr=args.lr)
             reset_scheduler = reset_scheduler * 2
 

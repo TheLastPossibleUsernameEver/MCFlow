@@ -293,10 +293,12 @@ def create_k_fold(matrix, seed):
 
 
 def path_to_matrix(path):
-    if path == 'physionet':
+    if path == 'physionet_train':
         df = pd.read_csv('./data/Approx-Comp/s20011.csv')
         matrix = df.values[:, 1:]
         return matrix
+    elif path == 'physionet_test':
+        df = pd.read_csv('./data/Approx-Comp/s20011.csv')
     else:
         print("Not a valid dataset\n\n")
         print("Valid datasets include: \nphysionet")

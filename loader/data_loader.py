@@ -16,7 +16,7 @@ class DataLoader(nn.Module):
     MODE_TRAIN = 0
     MODE_TEST = 1
 
-    def __init__(self, mode=MODE_TRAIN, seed=0, path='physionet', drp_percent=0.5):
+    def __init__(self, mode=MODE_TRAIN, seed=0, path='physionet_train', drp_percent=0.5):
 
         self.path = path
 
@@ -50,7 +50,7 @@ class DataLoader(nn.Module):
         self.mode = mode
 
     @classmethod
-    def test_data_loader(cls, path='physionet', mode=3):
+    def test_data_loader(cls, path='physionettest', mode=3):
         cls.path = path
 
         cls.matrix = util.path_to_matrix(path)

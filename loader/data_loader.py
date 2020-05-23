@@ -50,7 +50,7 @@ class DataLoader(nn.Module):
         self.mode = mode
 
     @classmethod
-    def test_data_loader(cls, path='physionettest', mode=3):
+    def test_data_loader(cls, path='physionet_test', mode=MODE_TEST):
         cls.path = path
 
         cls.matrix = util.path_to_matrix(path)

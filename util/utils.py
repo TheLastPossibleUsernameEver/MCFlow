@@ -29,13 +29,13 @@ def endtoend_train(flow, nn_model, nf_optimizer, nn_optimizer, loader, args):
         x_hat = flow.inverse(z_hat)
         _, log_p = flow.log_prob(x_hat, args)
 
-        print("1-st training checkpoint")
+#        print("1-st training checkpoint")
 
         batch_loss = torch.sum(loss_func(x_hat, labels[0]) * (1 - labels[1]))
         total_imputing += np.sum(1 - labels[1].cpu().numpy())
 
-        print("Index is: " + str(index) + "\nBatch_loss is " + str(batch_loss) + "\nTotal_imputing is " +
-              str(total_imputing) + "\nTotalloss is: " + str(totalloss) + "\nNf_totalloss: " + str(nf_totalloss))
+#        print("Index is: " + str(index) + "\nBatch_loss is " + str(batch_loss) + "\nTotal_imputing is " +
+#              str(total_imputing) + "\nTotalloss is: " + str(totalloss) + "\nNf_totalloss: " + str(nf_totalloss))
 
         log_lss = log_p
         total_log_loss += log_p.item()
@@ -298,7 +298,9 @@ def path_to_matrix(path):
         matrix = df.values[:, 1:]
         return matrix
     elif path == 'physionet_test':
-        df = pd.read_csv('./data/Approx-Comp/s20011.csv')
+        df = pd.read_csv('./data/Approx-Comp/processed_s20071.csv')
+        matrix = df.values[:, 1:]
+        return matrix
     else:
         print("Not a valid dataset\n\n")
         print("Valid datasets include: \nphysionet")

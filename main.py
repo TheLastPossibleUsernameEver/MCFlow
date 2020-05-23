@@ -6,21 +6,24 @@ import torch
 import argparse
 import sys
 import os
+
+from loader.test_data_loader import TestDataLoader
+from loader.train_data_loader import TrainDataLoader
 from models import InterpRealNVP
 import util
-from loader import DataLoader
+import loader
 from models import LatentToLatentApprox
 
 
 def main():
     # initialize dataset class
-    ldr_train = DataLoader(mode=0, seed=args.seed, path='physionet_train', drp_percent=args.drp_impt)
+    ldr_train = TrainDataLoader(mode=0, seed=args.seed, path='physionet_train', drp_percent=args.drp_impt)
     print("Initialized Data Loader")
 
     train_data_loader = torch.utils.data.DataLoader(ldr_train, batch_size=args.batch_size, shuffle=True, drop_last=False)
     print("Initialized Torch train data Loader")
 
-    ldr_test = DataLoader.test_data_loader(path='physionet_test')
+    ldr_test = TestDataLoader(path='physionet_test')
     test_data_loader = torch.utils.data.DataLoader(ldr_test, batch_size=args.batch_size, shuffle=False, drop_last=False)
     print("Initialized Torch test data Loader")
 

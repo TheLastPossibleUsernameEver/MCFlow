@@ -19,12 +19,12 @@ class TestDataLoader(nn.Module):
 
         trans = np.transpose(self.matrix)
 
-        for r_idx, rows in enumerate(trans):
-            row = []
-            for c_idx, element in enumerate(rows):
-                if self.mask[c_idx][r_idx] == 0:
-                    row.append(element)
-            self.unique_values.append(np.asarray(row))
+        # for r_idx, rows in enumerate(trans):
+        #     row = []
+        #     for c_idx, element in enumerate(rows):
+        #         if self.mask[c_idx][r_idx] == 0:
+        #             row.append(element)
+        #     self.unique_values.append(np.asarray(row))
 
         self.train, self.test = util.fill_missingness(self.matrix, self.mask, self.unique_values, self.path, seed)
         self.mode = mode

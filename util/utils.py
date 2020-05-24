@@ -383,15 +383,15 @@ def create_k_fold(matrix, seed):
 
 def path_to_matrix(path):
     if path == 'physionet_train':
-        df = pd.read_csv('./data/Approx-Comp')
+        df = pd.read_csv('./data/Approx-Comp/s20011.csv')
     elif path == 'physionet_test':
-        df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
+        df = pd.read_csv('./data/Approx-Comp/processed_s20071.csv')
     else:
         print("Not a valid dataset\n\n")
         print("Valid datasets include: \nphysionet_train")
         print("physionet_test")
         sys.exit()
-    matrix = df.values[:, 1]
+    matrix = df.to_numpy()
     return matrix
 
 
@@ -427,7 +427,7 @@ def fill_missingness(matrix, mask, unique_values, path, seed=0):
     return create_k_fold(matrix, seed)
 
 
-def make_static_mask(drp_percent, seed, path, matrix):
+def make_static_mask(drp_percent, path, matrix):
     mask = np.zeros(matrix.shape)
 
     if path == "physionet_train":

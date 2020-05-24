@@ -22,8 +22,8 @@ class DataLoader(nn.Module):
 
         matrix = util.path_to_matrix(path)
         self.matrix, self.maxs, self.mins = util.preprocess(matrix)  # Preprocess according to the paper cited above
-        np.random.shuffle(self.matrix)
-        np.random.seed(seed)
+        # np.random.shuffle(self.matrix)
+        # np.random.seed(seed)
         self.mask = util.make_static_mask(drp_percent, seed, path, self.matrix)  # Check if the mask is there or not in this function
         self.original_tr, self.original_te = util.create_k_fold(self.matrix, seed)
         self.unique_values = []

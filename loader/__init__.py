@@ -1,1 +1,2 @@
-from loader.train_data_loader import DataLoader
+from loader.train_data_loader import TrainDataLoader
+from loader.test_data_loader import TestDataLoader

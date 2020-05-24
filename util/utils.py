@@ -382,42 +382,17 @@ def create_k_fold(matrix, seed):
 
 
 def path_to_matrix(path):
-    if path == 'news':
-        try:
-            df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-            matrix = df.values[:, 1:]
-        except:
-            print("\nDownloading OnlineNewsPopularity dataset\n")
-            ssl._create_default_https_context = ssl._create_unverified_context
-            wget.download('https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip')
-            with zipfile.ZipFile('OnlineNewsPopularity.zip', 'r') as zip_ref:
-                zip_ref.extractall('./data/')
-            os.remove("OnlineNewsPopularity.zip")
-            if os.path.exists('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv'):
-                print("\nSuccessfully downloaded OnlineNewsPopularity dataset from the UCI database")
-                df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
-                matrix = df.values[:,1:]
-            else:
-                print("\n\nError downloading UCI database please extract OnlineNewsPopularity.zip in the data folder")
-                print("Donwload OnlineNewsPopularity.zip at https://archive.ics.uci.edu/ml/machine-learning-databases/00332/OnlineNewsPopularity.zip")
-                sys.exit()
-        return matrix
-    elif path == 'mnist':
-        mnist_trainset = datasets.MNIST(root='./data', train=True, download=True)
-        mnist_testset = datasets.MNIST(root='./data', train=False, download=True)
-        mnist_train = []
-        mnist_test = []
-        for idx in range(len(mnist_trainset)):
-            mnist_train.append(np.array(mnist_trainset[idx][0]).flatten() / 255)
-
-        for idx in range(len(mnist_testset)):
-            mnist_test.append(np.array(mnist_testset[idx][0]).flatten() / 255)
-        return mnist_train, mnist_test, (1, 28, 28)
+    if path == 'physionet_train':
+        df = pd.read_csv('./data/Approx-Comp')
+    elif path == 'physionet_test':
+        df = pd.read_csv('./data/OnlineNewsPopularity/OnlineNewsPopularity.csv')
     else:
         print("Not a valid dataset\n\n")
-        print("Valid datasets include: \nnews")
-        print("mnist")
+        print("Valid datasets include: \nphysionet_train")
+        print("physionet_test")
         sys.exit()
+    matrix = df.values[:, 1]
+    return matrix
 
 
 def preprocess(data):
@@ -454,13 +429,15 @@ def fill_missingness(matrix, mask, unique_values, path, seed=0):
 
 def make_static_mask(drp_percent, seed, path, matrix):
     mask = np.zeros(matrix.shape)
-    if os.path.exists('./masks/' + path + 'mask.npy'):
-        mask = np.load('./masks/' + path + 'mask.npy')
-    else:
-        for r_idx, row in enumerate(mask):
-            for c_idx, element in enumerate(row):
-                if np.random.uniform() < drp_percent:
-                    mask[r_idx][c_idx] += 1
+
+    if path == "physionet_train":
+        if os.path.exists('./masks/' + path + '_mask.npy') and path:
+            mask = np.load('./masks/' + path + '_mask.npy')
+        else:
+            for r_idx, row in enumerate(mask):
+                for c_idx, element in enumerate(row):
+                    if np.random.uniform() < drp_percent:
+                        mask[r_idx][c_idx] += 1
 
         np.save('./masks/' + path + 'mask.npy', mask)
 

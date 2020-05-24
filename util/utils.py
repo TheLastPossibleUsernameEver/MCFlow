@@ -352,3 +352,8 @@ def make_static_mask(drp_percent, seed, path, matrix):
         np.save('./masks/' + path + 'mask.npy', mask)
 
     return mask
+
+
+def make_just_mask(matrix):
+    mask = np.zeros(matrix.shape)
+    return mask

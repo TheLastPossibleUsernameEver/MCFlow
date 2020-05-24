@@ -1,1 +1,1 @@
-from loader.data_loader import DataLoader
+from loader.train_data_loader import DataLoader

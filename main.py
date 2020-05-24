@@ -11,7 +11,6 @@ from loader.test_data_loader import TestDataLoader
 from loader.train_data_loader import TrainDataLoader
 from models import InterpRealNVP
 import util
-import loader
 from models import LatentToLatentApprox
 
 

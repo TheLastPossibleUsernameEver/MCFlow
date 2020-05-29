@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-import torchvision
-from torchvision import transforms, datasets
+from torchvision import datasets
 from torch import distributions
 import ssl
 import argparse

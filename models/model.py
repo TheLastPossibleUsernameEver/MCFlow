@@ -1,7 +1,5 @@
-import numpy as np
 import torch
 from torch import nn
-from torch.nn.parameter import Parameter
 
 
 class InterpRealNVP(nn.Module):
@@ -16,8 +14,8 @@ class InterpRealNVP(nn.Module):
         super(InterpRealNVP, self).__init__()
 
         self.mask = nn.Parameter(mask, requires_grad=False)
-        self.translate_nn = torch.nn.ModuleList([translating_nn() for _ in range(len(mask))])
-        self.scale_nn = torch.nn.ModuleList([scaling_nn() for _ in range(len(mask))])
+        self.translate_nn = nn.ModuleList([translating_nn() for _ in range(len(mask))])
+        self.scale_nn = nn.ModuleList([scaling_nn() for _ in range(len(mask))])
         self.prior = prior
 
     def forward(self, x):
